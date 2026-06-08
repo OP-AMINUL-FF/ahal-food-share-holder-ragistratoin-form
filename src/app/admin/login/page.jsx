@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
-import { setRememberMe, getRememberMe, applySessionPersistence } from '@/lib/auth'
+import { setRememberMe, getRememberMe } from '@/lib/auth'
 import { Shield, LogIn } from 'lucide-react'
 
 export default function AdminLoginPage() {
@@ -27,7 +27,6 @@ export default function AdminLoginPage() {
       return
     }
     setRememberMe(rememberMe)
-    applySessionPersistence(rememberMe)
     await supabase.auth.getUser()
     router.push('/admin')
   }

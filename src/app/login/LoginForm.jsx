@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabaseClient'
-import { setRememberMe, getRememberMe, applySessionPersistence } from '@/lib/auth'
+import { setRememberMe, getRememberMe } from '@/lib/auth'
 import { UtensilsCrossed, LogIn, CheckCircle } from 'lucide-react'
 
 export default function LoginForm() {
@@ -43,8 +43,6 @@ export default function LoginForm() {
     }
 
     setRememberMe(rememberMe)
-    applySessionPersistence(rememberMe)
-
     await supabase.auth.getUser()
 
     const { data: isAdmin } = await supabase.rpc('is_admin')
