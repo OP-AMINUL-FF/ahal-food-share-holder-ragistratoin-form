@@ -14,14 +14,17 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
 
   useEffect(() => {
     loadMessages()
-    const channel = supabase.channel('messages')
+    const channel = supabase.channel(`chat-${userId}-${otherId}`)
       .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages',
-          filter: `sender_id=in.(${userId},${otherId})` },
+        { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
-          setMessages(prev => [...prev, payload.new])
-          if (payload.new.receiver_id === userId) {
-            supabase.from('messages').update({ is_read: true }).eq('id', payload.new.id)
+          const m = payload.new
+          const isOurs = (m.sender_id === userId && m.receiver_id === otherId) ||
+                         (m.sender_id === otherId && m.receiver_id === userId)
+          if (!isOurs) return
+          setMessages(prev => [...prev, m])
+          if (m.receiver_id === userId) {
+            supabase.from('messages').update({ is_read: true }).eq('id', m.id)
           }
         }
       )
@@ -64,7 +67,7 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
       const { data: { publicUrl } } = supabase.storage.from('message-media').getPublicUrl(path)
       mediaUrl = publicUrl
     }
-    await supabase.from('messages').insert({
+    const { data: newMsg } = await supabase.from('messages').insert({
       sender_id: userId,
       sender_type: userType,
       receiver_id: otherId,
@@ -72,7 +75,8 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
       message_type: type,
       content: text || null,
       media_url: mediaUrl,
-    })
+    }).select().single()
+    if (newMsg) setMessages(prev => [...prev, newMsg])
     setText('')
     setFile(null)
   }

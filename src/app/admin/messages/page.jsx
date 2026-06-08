@@ -101,14 +101,12 @@ export default function AdminMessagesPage() {
 
     channel
       .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages',
-          filter: `receiver_id=eq.${adminUser}` },
-        refreshConvos
-      )
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages',
-          filter: `sender_id=eq.${adminUser}` },
-        refreshConvos
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          if (payload.new.receiver_id === adminUser || payload.new.sender_id === adminUser) {
+            refreshConvos()
+          }
+        }
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }
