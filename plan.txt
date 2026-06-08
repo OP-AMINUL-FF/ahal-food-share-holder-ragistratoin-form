@@ -1,0 +1,227 @@
+╔══════════════════════════════════════════════════════════════╗
+║           AHAL Food Share Holder Registration System          ║
+║                    Complete Project Plan                      ║
+╚══════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PROJECT IDENTITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Company Name    : AHAL (আহাল)
+  Founder         : HM Fayzullah
+  Developer       : OP AMINUL FF
+  Developer Firm  : OPX
+  Project Type    : Food Share Holder Registration System
+  Platform        : Web Application
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  TECH STACK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Frontend   : Next.js 14 (App Router) + Tailwind CSS
+  Hosting    : Vercel
+  Backend    : Supabase (PostgreSQL, Auth, Storage, Realtime)
+  Database   : PostgreSQL via Supabase
+  Auth       : Supabase Auth (Email/Password)
+  Storage    : Supabase Storage (Photos, NID, Media)
+  Realtime   : Supabase Realtime (Messaging)
+  Icons      : Lucide React
+  Notify     : React Hot Toast
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SUPABASE CONFIGURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Project URL : https://tzvqqitvvqhhilkpxkjd.supabase.co
+  Anon Key    : eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJz
+                dXBhYmFzZSIsInJlZiI6InR6dnFxaXR2dnFoaGlsa3B4a2pk
+                Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTA2OTksImV4
+                cCI6MjA5NjQ4NjY5OX0.Scfdq2MNv3umqlVZojv4NfqsJWHz
+                acEXVl7yPmZfwGQ
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  DATABASE TABLES (fullsetup.sql)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. divisions
+     ── id (uuid PK), name_bn (text), name_en (text), created_at
+
+  2. districts
+     ── id (uuid PK), division_id (uuid FK), name_bn (text),
+        name_en (text), created_at
+
+  3. upazilas (থানা/উপজেলা)
+     ── id (uuid PK), district_id (uuid FK), name_bn (text),
+        name_en (text), created_at
+
+  4. unions (ইউনিয়ন)
+     ── id (uuid PK), upazila_id (uuid FK), name_bn (text),
+        name_en (text), created_at
+
+  5. villages (গ্রাম)
+     ── id (uuid PK), union_id (uuid FK), name_bn (text),
+        name_en (text), created_at
+
+  6. business_types (ব্যবসার ধরন)
+     ── id (uuid PK), name_bn (text), name_en (text),
+        is_active (boolean default true), created_at
+
+  7. shareholder_status enum
+     ── 'pending', 'approved', 'rejected'
+
+  8. shareholders (মূল রেজিস্ট্রেশন টেবিল)
+     ── id (uuid PK)
+        auth_user_id (uuid FK → auth.users)
+        name (text)
+        father_name (text)
+        mother_name (text)
+        date_of_birth (date)
+        phone (text UNIQUE)
+        email (text UNIQUE)
+        division_id (uuid FK → divisions)
+        district_id (uuid FK → districts)
+        upazila_id (uuid FK → upazilas)
+        union_id (uuid FK → unions)
+        village_id (uuid FK → villages)
+        address_details (text)
+        photo_url (text)
+        nid_front_url (text)
+        nid_back_url (text)
+        business_type_id (uuid FK → business_types)
+        status (shareholder_status default 'pending')
+        reviewed_by (uuid FK → admins)
+        reviewed_at (timestamptz)
+        review_notes (text)
+        created_at (timestamptz)
+        updated_at (timestamptz)
+
+  9. admins (এডমিন টেবিল)
+     ── id (uuid PK)
+        auth_user_id (uuid FK → auth.users)
+        name (text)
+        email (text UNIQUE)
+        phone (text)
+        role (text default 'admin')
+        created_at (timestamptz)
+
+  10. message_type enum
+      ── 'text', 'image', 'video', 'voice'
+
+  11. messages (মেসেজিং সিস্টেম)
+      ── id (uuid PK)
+         sender_id (uuid)
+         sender_type (text: 'shareholder' | 'admin')
+         receiver_id (uuid)
+         receiver_type (text: 'shareholder' | 'admin')
+         message_type (message_type default 'text')
+         content (text)
+         media_url (text)
+         is_read (boolean default false)
+         created_at (timestamptz)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  STORAGE BUCKETS (Supabase Storage)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Bucket Name        : Purpose
+  ─────────────────────────────────────────────────────
+  shareholder-photos : User profile photos
+  shareholder-nid    : NID card (front & back)
+  message-media      : Message attachments (image/video/voice)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  RLS POLICIES (Row Level Security)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  divisions, districts, upazilas, unions, villages, business_types
+  → PUBLIC: SELECT only (anyone can read)
+
+  shareholders
+  → User: SELECT/UPDATE own row only
+  → Admin: ALL (full access)
+  → Public: INSERT (registration)
+
+  admins
+  → Admin: ALL (self only)
+
+  messages
+  → Participant: SELECT/INSERT if sender or receiver
+  → Admin: ALL
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  FRONTEND ROUTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  PUBLIC ROUTES:
+  ─────────────────────────────────────────────────────
+  /                    → Landing Page (AHAL Branding)
+  /register            → Registration Form
+  /login               → User Login
+
+  PROTECTED ROUTES (Approved Shareholder only):
+  ─────────────────────────────────────────────────────
+  /dashboard           → User Dashboard Home
+  /dashboard/messages  → Chat with Owner
+  /dashboard/members   → Other Members (limited view)
+
+  PROTECTED ROUTES (Admin only):
+  ─────────────────────────────────────────────────────
+  /admin/login         → Admin Login
+  /admin               → Admin Dashboard (stats)
+  /admin/users         → All Users List
+  /admin/users/[id]    → Single User Full Details
+  /admin/messages      → Message Center
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  USER WORKFLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Step 1: User visits /register
+  Step 2: Fills form → Personal info → Location (dropdown) →
+          Photo/NID upload → Contact → Business type
+  Step 3: Submits → Supabase Auth signup + shareholders insert
+  Step 4: Status → "pending" (⏳ Under Review)
+  Step 5: Admin logs in → /admin/users → sees all pending users
+  Step 6: Admin clicks user → full details → Approve / Reject
+  Step 7: If Approved → User gets access to /dashboard
+  Step 8: User can message Owner via /dashboard/messages
+  Step 9: User can see other members (limited) via /dashboard/members
+  Step 10: Admin can see all conversations in /admin/messages
+  Step 11: Admin can send/reply with text/image/video/voice
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  MESSAGING SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Features:
+  ─────────────────────────────────────────────────────
+  • Real-time chat via Supabase Realtime
+  • Text messages
+  • Image sharing (upload + preview)
+  • Video sharing (upload + preview)
+  • Voice messages (upload + playback)
+  • Read/unread status
+  • Conversation list (grouped by participants)
+  • Admin sees all conversations
+  • User sees only their conversation with Owner
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  DEPLOYMENT (Vercel)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Push code to GitHub
+  2. Connect repo to Vercel
+  3. Add Environment Variables:
+     NEXT_PUBLIC_SUPABASE_URL=https://tzvqqitvvqhhilkpxkjd.supabase.co
+     NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiI...
+  4. Deploy
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  CREATED BY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Developer  : OP AMINUL FF
+  Company    : OPX
+  For        : AHAL — HM Fayzullah
+  Date       : June 2026
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
