@@ -938,32 +938,33 @@ INSERT INTO upazilas (id, district_id, name_bn, name_en) VALUES
 ('d3000001-0001-4000-a000-000000000520', 'd2000001-0001-4000-a000-000000000064', 'নালিতাবাড়ী', 'Nalitabari'),
 ('d3000001-0001-4000-a000-000000000521', 'd2000001-0001-4000-a000-000000000064', 'শ্রীবরদী', 'Sreebordi');
 
--- 14. UNIONS (ইউনিয়ন) — Auto-generated 3 per upazila
+-- 14. UNIONS (ইউনিয়ন) — Auto-generated 3 per upazila (deterministic UUIDs)
 DO $$
 DECLARE
   u RECORD;
-  bid UUID;
+  ns_uuid CONSTANT UUID := '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
 BEGIN
   FOR u IN SELECT * FROM upazilas ORDER BY name_en LOOP
-    INSERT INTO unions (upazila_id, name_bn, name_en) VALUES
-      (u.id, u.name_bn || ' সদর ইউনিয়ন', u.name_en || ' Sadar Union');
-    INSERT INTO unions (upazila_id, name_bn, name_en) VALUES
-      (u.id, u.name_bn || ' দক্ষিণ ইউনিয়ন', u.name_en || ' South Union');
-    INSERT INTO unions (upazila_id, name_bn, name_en) VALUES
-      (u.id, u.name_bn || ' উত্তর ইউনিয়ন', u.name_en || ' North Union');
+    INSERT INTO unions (id, upazila_id, name_bn, name_en) VALUES
+      (uuid_generate_v5(ns_uuid, u.id || '-sadar'), u.id, u.name_bn || ' সদর ইউনিয়ন', u.name_en || ' Sadar Union');
+    INSERT INTO unions (id, upazila_id, name_bn, name_en) VALUES
+      (uuid_generate_v5(ns_uuid, u.id || '-south'), u.id, u.name_bn || ' দক্ষিণ ইউনিয়ন', u.name_en || ' South Union');
+    INSERT INTO unions (id, upazila_id, name_bn, name_en) VALUES
+      (uuid_generate_v5(ns_uuid, u.id || '-north'), u.id, u.name_bn || ' উত্তর ইউনিয়ন', u.name_en || ' North Union');
   END LOOP;
 END $$;
 
--- 15. VILLAGES (গ্রাম) — Auto-generated 2 per union
+-- 15. VILLAGES (গ্রাম) — Auto-generated 2 per union (deterministic UUIDs)
 DO $$
 DECLARE
   u RECORD;
+  ns_uuid CONSTANT UUID := '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
 BEGIN
   FOR u IN SELECT * FROM unions ORDER BY name_en LOOP
-    INSERT INTO villages (union_id, name_bn, name_en) VALUES
-      (u.id, u.name_bn || ' - পূর্ব', u.name_en || ' - East');
-    INSERT INTO villages (union_id, name_bn, name_en) VALUES
-      (u.id, u.name_bn || ' - পশ্চিম', u.name_en || ' - West');
+    INSERT INTO villages (id, union_id, name_bn, name_en) VALUES
+      (uuid_generate_v5(ns_uuid, u.id || '-east'), u.id, u.name_bn || ' - পূর্ব', u.name_en || ' - East');
+    INSERT INTO villages (id, union_id, name_bn, name_en) VALUES
+      (uuid_generate_v5(ns_uuid, u.id || '-west'), u.id, u.name_bn || ' - পশ্চিম', u.name_en || ' - West');
   END LOOP;
 END $$;
 
