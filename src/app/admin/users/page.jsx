@@ -9,19 +9,36 @@ import toast from 'react-hot-toast'
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([])
+  const [divisions, setDivisions] = useState([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('all')
+  const [divisionFilter, setDivisionFilter] = useState('')
   const [rejecting, setRejecting] = useState(null)
   const [rejectNotes, setRejectNotes] = useState('')
   const supabase = createClient()
   if (!supabase) return null
 
-  useEffect(() => { loadUsers() }, [])
+  useEffect(() => {
+    loadDivisions()
+    loadUsers()
+  }, [])
+
+  useEffect(() => {
+    loadUsers()
+  }, [divisionFilter])
+
+  async function loadDivisions() {
+    const { data } = await supabase.from('divisions').select('id, name_bn').order('name_bn')
+    if (data) setDivisions(data)
+  }
 
   async function loadUsers() {
-    const { data } = await supabase.from('shareholders')
-      .select('id, name, phone, email, status, created_at, business_types!inner(name_bn)')
-      .order('created_at', { ascending: false })
+    let query = supabase.from('shareholders')
+      .select('id, name, phone, email, status, created_at, division_id, business_types!inner(name_bn)')
+    if (divisionFilter) {
+      query = query.eq('division_id', divisionFilter)
+    }
+    const { data } = await query.order('created_at', { ascending: false })
     if (data) setUsers(data)
   }
 
@@ -65,6 +82,13 @@ export default function AdminUsersPage() {
             focus:ring-2 focus:ring-ahal-500 outline-none" placeholder="নাম বা ফোন দিয়ে খুঁজুন..."
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>
+        <select className="px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:ring-2 focus:ring-ahal-500"
+          value={divisionFilter} onChange={e => setDivisionFilter(e.target.value)}>
+          <option value="">সব বিভাগ</option>
+          {divisions.map(d => (
+            <option key={d.id} value={d.id}>{d.name_bn}</option>
+          ))}
+        </select>
         <select className="px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:ring-2 focus:ring-ahal-500"
           value={filter} onChange={e => setFilter(e.target.value)}>
           <option value="all">সব</option>
