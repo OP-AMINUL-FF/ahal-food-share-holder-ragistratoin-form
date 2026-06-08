@@ -192,25 +192,25 @@ CREATE POLICY "Anyone can register" ON shareholders FOR INSERT WITH CHECK (true)
 CREATE POLICY "User SELECT own" ON shareholders FOR SELECT USING (auth.uid() = auth_user_id);
 CREATE POLICY "User UPDATE own" ON shareholders FOR UPDATE USING (auth.uid() = auth_user_id);
 CREATE POLICY "Admin ALL shareholders" ON shareholders FOR ALL USING (
-  EXISTS (SELECT 1 FROM admins WHERE auth_user_id = auth.uid())
+  public.is_admin()
 );
 
 CREATE POLICY "Admin SELECT self" ON admins FOR SELECT USING (auth.uid() = auth_user_id);
 CREATE POLICY "Admin ALL admins" ON admins FOR ALL USING (
-  EXISTS (SELECT 1 FROM admins WHERE auth_user_id = auth.uid())
+  public.is_admin()
 );
 
 CREATE POLICY "Participant can SELECT messages" ON messages FOR SELECT USING (
   auth.uid() = sender_id OR auth.uid() = receiver_id OR
-  EXISTS (SELECT 1 FROM admins WHERE auth_user_id = auth.uid())
+  public.is_admin()
 );
 CREATE POLICY "Participant can INSERT messages" ON messages FOR INSERT WITH CHECK (
   auth.uid() = sender_id OR
-  EXISTS (SELECT 1 FROM admins WHERE auth_user_id = auth.uid())
+  public.is_admin()
 );
 CREATE POLICY "Participant can UPDATE read status" ON messages FOR UPDATE USING (
   auth.uid() = receiver_id OR
-  EXISTS (SELECT 1 FROM admins WHERE auth_user_id = auth.uid())
+  public.is_admin()
 );
 
 -- 12. STORAGE POLICIES
