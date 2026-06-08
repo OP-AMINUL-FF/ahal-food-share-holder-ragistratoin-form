@@ -961,16 +961,18 @@ INSERT INTO business_types (id, name_bn, name_en) VALUES
   ('d4000001-0001-4000-a000-000000000014', 'ফ্রিল্যান্সিং', 'Freelancing'),
   ('d4000001-0001-4000-a000-000000000015', 'অন্যান্য', 'Other');
 
--- 18. CREATE DEFAULT ADMIN (idempotent)
+-- 18. CREATE DEFAULT ADMIN (fully idempotent)
 -- Email: admin@gmail.com, Password: admin
 DO $$
 DECLARE
   existing_id UUID;
   admin_id UUID;
 BEGIN
-  -- Check if admin already exists
+  -- Check if admin already exists in auth.users
   SELECT id INTO existing_id FROM auth.users WHERE email = 'admin@gmail.com';
+
   IF existing_id IS NULL THEN
+    -- First time: create auth user, identity, AND admins record
     admin_id := uuid_generate_v4();
 
     INSERT INTO auth.users (
@@ -1007,5 +1009,11 @@ BEGIN
 
     INSERT INTO admins (auth_user_id, name, email, phone, role)
     VALUES (admin_id, 'Admin', 'admin@gmail.com', '01700000000', 'super_admin');
+  ELSE
+    -- auth.user exists but admins table was just recreated (after DROP), so re-insert
+    admin_id := existing_id;
+    INSERT INTO admins (auth_user_id, name, email, phone, role)
+    VALUES (admin_id, 'Admin', 'admin@gmail.com', '01700000000', 'super_admin')
+    ON CONFLICT (email) DO NOTHING;
   END IF;
 END $$;
