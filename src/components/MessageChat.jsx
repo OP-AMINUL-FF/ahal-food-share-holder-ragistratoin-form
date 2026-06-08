@@ -9,10 +9,12 @@ function VoiceMessage({ src, isOwn }) {
   const [playing, setPlaying] = useState(false)
   const [current, setCurrent] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [loaded, setLoaded] = useState(false)
   const audioRef = useRef(null)
   const animRef = useRef(null)
 
   function format(t) {
+    if (!isFinite(t) || isNaN(t)) return '0:00'
     const m = Math.floor(t / 60)
     const s = Math.floor(t % 60)
     return `${m}:${String(s).padStart(2, '0')}`
@@ -38,8 +40,9 @@ function VoiceMessage({ src, isOwn }) {
   }
 
   function seek(e) {
+    if (!isFinite(duration) || duration <= 0) return
     const rect = e.currentTarget.getBoundingClientRect()
-    const pct = (e.clientX - rect.left) / rect.width
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
     if (audioRef.current) {
       audioRef.current.currentTime = pct * duration
       setCurrent(pct * duration)
@@ -49,21 +52,25 @@ function VoiceMessage({ src, isOwn }) {
   useEffect(() => {
     const el = audioRef.current
     if (!el) return
-    const onMeta = () => setDuration(el.duration)
+    const onMeta = () => { setDuration(el.duration); setLoaded(true) }
     const onEnd = () => { setPlaying(false); setCurrent(0); cancelAnimationFrame(animRef.current) }
+    const onError = () => setLoaded(false)
     el.addEventListener('loadedmetadata', onMeta)
     el.addEventListener('ended', onEnd)
+    el.addEventListener('error', onError)
     return () => {
       el.removeEventListener('loadedmetadata', onMeta)
       el.removeEventListener('ended', onEnd)
+      el.removeEventListener('error', onError)
       cancelAnimationFrame(animRef.current)
     }
   }, [])
 
   const progress = duration > 0 ? (current / duration) * 100 : 0
+  const display = loaded ? (playing ? format(current) : format(duration)) : '0:00'
 
   return (
-    <div className={`flex items-center gap-2 min-w-[200px] ${isOwn ? '' : ''}`}>
+    <div className="flex items-center gap-2 min-w-[200px]">
       <audio ref={audioRef} src={src} preload="metadata" />
       <button onClick={toggle}
         className={`p-1.5 rounded-full flex-shrink-0 ${
@@ -81,7 +88,7 @@ function VoiceMessage({ src, isOwn }) {
       <div className="flex items-center gap-1 flex-shrink-0">
         {playing && <Volume2 className={`w-3 h-3 ${isOwn ? 'text-white/70' : 'text-gray-400'}`} />}
         <span className={`text-xs font-mono ${isOwn ? 'text-white/70' : 'text-gray-500'}`}>
-          {playing ? format(current) : format(duration)}
+          {display}
         </span>
       </div>
     </div>
