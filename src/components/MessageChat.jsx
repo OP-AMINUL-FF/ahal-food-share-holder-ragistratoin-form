@@ -2,7 +2,91 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabaseClient'
-import { Send, Image, Video, Mic, X, StopCircle, Play, Trash2 } from 'lucide-react'
+import { Send, Image, Video, Mic, X, StopCircle, Play, Pause, Trash2, Volume2 } from 'lucide-react'
+
+// ---- Voice Message Player Component ----
+function VoiceMessage({ src, isOwn }) {
+  const [playing, setPlaying] = useState(false)
+  const [current, setCurrent] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const audioRef = useRef(null)
+  const animRef = useRef(null)
+
+  function format(t) {
+    const m = Math.floor(t / 60)
+    const s = Math.floor(t % 60)
+    return `${m}:${String(s).padStart(2, '0')}`
+  }
+
+  function toggle() {
+    if (!audioRef.current) return
+    if (playing) {
+      audioRef.current.pause()
+      cancelAnimationFrame(animRef.current)
+      setPlaying(false)
+    } else {
+      audioRef.current.play()
+      setPlaying(true)
+      function update() {
+        if (audioRef.current) {
+          setCurrent(audioRef.current.currentTime)
+          animRef.current = requestAnimationFrame(update)
+        }
+      }
+      animRef.current = requestAnimationFrame(update)
+    }
+  }
+
+  function seek(e) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const pct = (e.clientX - rect.left) / rect.width
+    if (audioRef.current) {
+      audioRef.current.currentTime = pct * duration
+      setCurrent(pct * duration)
+    }
+  }
+
+  useEffect(() => {
+    const el = audioRef.current
+    if (!el) return
+    const onMeta = () => setDuration(el.duration)
+    const onEnd = () => { setPlaying(false); setCurrent(0); cancelAnimationFrame(animRef.current) }
+    el.addEventListener('loadedmetadata', onMeta)
+    el.addEventListener('ended', onEnd)
+    return () => {
+      el.removeEventListener('loadedmetadata', onMeta)
+      el.removeEventListener('ended', onEnd)
+      cancelAnimationFrame(animRef.current)
+    }
+  }, [])
+
+  const progress = duration > 0 ? (current / duration) * 100 : 0
+
+  return (
+    <div className={`flex items-center gap-2 min-w-[200px] ${isOwn ? '' : ''}`}>
+      <audio ref={audioRef} src={src} preload="metadata" />
+      <button onClick={toggle}
+        className={`p-1.5 rounded-full flex-shrink-0 ${
+          isOwn ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-ahal-600 hover:bg-ahal-700 text-white'
+        }`}>
+        {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+      </button>
+      <div className="flex-1 cursor-pointer group" onClick={seek}>
+        <div className={`h-1.5 rounded-full overflow-hidden ${isOwn ? 'bg-white/30' : 'bg-gray-300'}`}>
+          <div className={`h-full rounded-full transition-all duration-100 ${
+            isOwn ? 'bg-white' : 'bg-ahal-600'
+          }`} style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {playing && <Volume2 className={`w-3 h-3 ${isOwn ? 'text-white/70' : 'text-gray-400'}`} />}
+        <span className={`text-xs font-mono ${isOwn ? 'text-white/70' : 'text-gray-500'}`}>
+          {playing ? format(current) : format(duration)}
+        </span>
+      </div>
+    </div>
+  )
+}
 
 export default function MessageChat({ userId, userType, otherId, otherType, otherName }) {
   const [messages, setMessages] = useState([])
@@ -228,7 +312,7 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
                 <div className={msg.content ? 'mt-1' : ''}>
                   {msg.message_type === 'image' && <img src={msg.media_url} alt="" className="rounded-lg max-w-full" />}
                   {msg.message_type === 'video' && <video src={msg.media_url} controls className="rounded-lg max-w-full" />}
-                  {msg.message_type === 'voice' && <audio src={msg.media_url} controls className="w-full" />}
+                  {msg.message_type === 'voice' && <VoiceMessage src={msg.media_url} isOwn={msg.sender_id === userId} />}
                 </div>
               )}
               <p className={`text-xs mt-1 ${msg.sender_id === userId ? 'text-white/70' : 'text-gray-400'}`}>
@@ -260,20 +344,21 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
 
         {/* Audio Preview Bar */}
         {audioPreviewUrl && !isRecording && (
-          <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border">
-            <button onClick={togglePlay} className="p-2 bg-ahal-600 text-white rounded-full hover:bg-ahal-700">
-              {isPlaying ? <StopCircle className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border">
+            <audio ref={audioRef} src={audioPreviewUrl} preload="metadata" onEnded={() => {
+              setIsPlaying(false)
+              if (audioRef.current) audioRef.current.currentTime = 0
+            }} />
+            <button onClick={togglePlay}
+              className="p-1.5 bg-ahal-600 text-white rounded-full hover:bg-ahal-700 flex-shrink-0">
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </button>
             <div className="flex-1">
-              {isPlaying && (
-                <audio ref={audioRef} src={audioPreviewUrl} onEnded={() => setIsPlaying(false)} />
-              )}
-              <div className="h-1 bg-gray-300 rounded-full overflow-hidden">
-                <div className={`h-full bg-ahal-600 rounded-full ${isPlaying ? 'animate-pulse' : ''}`}
-                  style={{ width: isPlaying ? '60%' : '0%' }} />
+              <div className="h-1.5 bg-gray-300 rounded-full overflow-hidden">
+                <div className="h-full bg-ahal-600 rounded-full transition-all duration-100" style={{ width: '0%' }} />
               </div>
             </div>
-            <span className="text-xs text-gray-500">ভয়েস</span>
+            <span className="text-xs text-gray-500">প্রিভিউ</span>
             <button onClick={cancelAudio} className="p-1 hover:bg-gray-200 rounded-full">
               <Trash2 className="w-4 h-4 text-red-500" />
             </button>
