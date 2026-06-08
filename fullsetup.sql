@@ -1031,13 +1031,14 @@ BEGIN
     );
 
     INSERT INTO auth.identities (
-      id, user_id, identity_data, provider, last_sign_in_at,
+      id, user_id, identity_data, provider, provider_id, last_sign_in_at,
       created_at, updated_at
     ) VALUES (
       admin_id,
       admin_id,
       jsonb_build_object('sub', admin_id::text, 'email', 'admin@gmail.com'),
       'email',
+      'admin@gmail.com',
       NOW(),
       NOW(),
       NOW()
