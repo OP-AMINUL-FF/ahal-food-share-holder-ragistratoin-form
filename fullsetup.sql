@@ -1,4 +1,4 @@
-﻿-- ============================================================
+-- ============================================================
 -- AHAL Food Share Holder Registration — Complete Database Setup
 -- ============================================================
 -- Run this entire script in Supabase SQL Editor
@@ -129,7 +129,12 @@ CREATE INDEX idx_messages_unread ON messages(is_read) WHERE is_read = false;
 
 -- 8. TRIGGER
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS  BEGIN NEW.updated_at = NOW(); RETURN NEW; END;  LANGUAGE plpgsql;
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_shareholders_updated_at
   BEFORE UPDATE ON shareholders FOR EACH ROW
@@ -934,7 +939,47 @@ INSERT INTO business_types (id, name_bn, name_en) VALUES
   ('d4000001-0001-4000-a000-000000000014', 'ফ্রিল্যান্সিং', 'Freelancing'),
   ('d4000001-0001-4000-a000-000000000015', 'অন্যান্য', 'Other');
 
--- 18. CREATE DEFAULT ADMIN (Run after setting up Supabase Auth)
--- First create admin in auth.users, then:
--- INSERT INTO admins (auth_user_id, name, email, phone, role)
--- VALUES ('<auth_user_id>', 'HM Fayzullah', 'admin@ahal.com', '01700000000', 'super_admin');
+-- 18. CREATE DEFAULT ADMIN
+-- Email: admin@gmail.com, Password: admin
+DO $$
+DECLARE
+  admin_id UUID := uuid_generate_v4();
+BEGIN
+  -- Insert into auth.users
+  INSERT INTO auth.users (
+    instance_id, id, aud, role, email, encrypted_password,
+    email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+    created_at, updated_at, confirmation_sent_at
+  ) VALUES (
+    '00000000-0000-0000-0000-000000000000',
+    admin_id,
+    'authenticated',
+    'authenticated',
+    'admin@gmail.com',
+    crypt('admin', gen_salt('bf')),
+    NOW(),
+    '{"provider":"email","providers":["email"]}',
+    '{"name":"Admin"}',
+    NOW(),
+    NOW(),
+    NOW()
+  );
+
+  -- Insert into auth.identities (required for Supabase Auth)
+  INSERT INTO auth.identities (
+    id, user_id, identity_data, provider, last_sign_in_at,
+    created_at, updated_at
+  ) VALUES (
+    admin_id,
+    admin_id,
+    jsonb_build_object('sub', admin_id::text, 'email', 'admin@gmail.com'),
+    'email',
+    NOW(),
+    NOW(),
+    NOW()
+  );
+
+  -- Insert into admins table
+  INSERT INTO admins (auth_user_id, name, email, phone, role)
+  VALUES (admin_id, 'Admin', 'admin@gmail.com', '01700000000', 'super_admin');
+END $$;
