@@ -1,9 +1,27 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { UtensilsCrossed, Users, Shield, MessageSquare } from 'lucide-react'
+import { createClient } from '@/lib/supabaseClient'
+import { UtensilsCrossed, Users, Shield, MessageSquare, LayoutDashboard } from 'lucide-react'
 
 export default function HomePage() {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const supabase = createClient()
+
+  useEffect(() => {
+    if (!supabase) { setLoading(false); return }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+      if (user) {
+        supabase.rpc('is_admin').then(({ data }) => setIsAdmin(!!data))
+      }
+      setLoading(false)
+    })
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
@@ -13,8 +31,18 @@ export default function HomePage() {
             <span className="text-xl font-bold text-ahal-800">AHAL</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login" className="btn-secondary text-sm">লগইন</Link>
-            <Link href="/register" className="btn-primary text-sm">রেজিস্টার</Link>
+            {loading ? null : user ? (
+              <Link href={isAdmin ? '/admin' : '/dashboard'}
+                className="btn-primary text-sm flex items-center gap-2">
+                <LayoutDashboard className="w-4 h-4" />
+                ড্যাশবোর্ড
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="btn-secondary text-sm">লগইন</Link>
+                <Link href="/register" className="btn-primary text-sm">রেজিস্টার</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -29,12 +57,22 @@ export default function HomePage() {
             নিবন্ধন করুন এবং আমাদের সাথে যুক্ত হন।
           </p>
           <div className="flex gap-4 justify-center">
-            <Link href="/register" className="btn-primary text-lg px-8 py-3">
-              নিবন্ধন করুন
-            </Link>
-            <Link href="/login" className="btn-secondary text-lg px-8 py-3">
-              লগইন
-            </Link>
+            {loading ? null : user ? (
+              <Link href={isAdmin ? '/admin' : '/dashboard'}
+                className="btn-primary text-lg px-8 py-3 flex items-center gap-2">
+                <LayoutDashboard className="w-5 h-5" />
+                ড্যাশবোর্ড
+              </Link>
+            ) : (
+              <>
+                <Link href="/register" className="btn-primary text-lg px-8 py-3">
+                  নিবন্ধন করুন
+                </Link>
+                <Link href="/login" className="btn-secondary text-lg px-8 py-3">
+                  লগইন
+                </Link>
+              </>
+            )}
           </div>
         </section>
 
