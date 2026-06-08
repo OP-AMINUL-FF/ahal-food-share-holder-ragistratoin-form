@@ -173,14 +173,38 @@ CREATE TRIGGER update_shareholders_updated_at
   BEFORE UPDATE ON shareholders FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
--- 9. STORAGE BUCKETS
+-- 9. RPC FUNCTIONS (defined BEFORE policies that use them)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN EXISTS (SELECT 1 FROM admins WHERE auth_user_id = auth.uid());
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_admin_auth_user_id()
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result UUID;
+BEGIN
+  SELECT auth_user_id INTO result FROM admins LIMIT 1;
+  RETURN result;
+END;
+$$;
+
+-- 10. STORAGE BUCKETS
 INSERT INTO storage.buckets (id, name, public) VALUES
   ('shareholder-photos', 'shareholder-photos', true),
   ('shareholder-nid', 'shareholder-nid', true),
   ('message-media', 'message-media', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 10. ENABLE RLS
+-- 11. ENABLE RLS
 ALTER TABLE divisions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE districts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE upazilas ENABLE ROW LEVEL SECURITY;
@@ -191,7 +215,7 @@ ALTER TABLE shareholders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 
--- 11. RLS POLICIES
+-- 12. RLS POLICIES
 CREATE POLICY "Public SELECT divisions" ON divisions FOR SELECT USING (true);
 CREATE POLICY "Public SELECT districts" ON districts FOR SELECT USING (true);
 CREATE POLICY "Public SELECT upazilas" ON upazilas FOR SELECT USING (true);
@@ -239,30 +263,6 @@ CREATE POLICY "Public read message-media" ON storage.objects
   FOR SELECT USING (bucket_id = 'message-media');
 CREATE POLICY "Auth upload message-media" ON storage.objects
   FOR INSERT WITH CHECK (bucket_id = 'message-media' AND auth.role() = 'authenticated');
-
--- 12b. RPC FUNCTIONS (bypass RLS via SECURITY DEFINER)
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-  RETURN EXISTS (SELECT 1 FROM admins WHERE auth_user_id = auth.uid());
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION public.get_admin_auth_user_id()
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  result UUID;
-BEGIN
-  SELECT auth_user_id INTO result FROM admins LIMIT 1;
-  RETURN result;
-END;
-$$;
 
 -- ============================================================
 -- 13. SEED DATA — BANGLADESH LOCATIONS
