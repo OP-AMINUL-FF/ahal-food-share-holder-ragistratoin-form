@@ -16,8 +16,8 @@ export default function UserMessagesPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setUserId(user.id)
-        const { data: admin } = await supabase.from('admins').select('id, auth_user_id').limit(1).single()
-        if (admin) setAdminId(admin.auth_user_id)
+        const { data: adminId } = await supabase.rpc('get_admin_auth_user_id')
+        if (adminId) setAdminId(adminId)
       }
     }
     init()

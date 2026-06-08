@@ -229,6 +229,30 @@ CREATE POLICY "Public read message-media" ON storage.objects
 CREATE POLICY "Auth upload message-media" ON storage.objects
   FOR INSERT WITH CHECK (bucket_id = 'message-media' AND auth.role() = 'authenticated');
 
+-- 12b. RPC FUNCTIONS (bypass RLS via SECURITY DEFINER)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN EXISTS (SELECT 1 FROM admins WHERE auth_user_id = auth.uid());
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_admin_auth_user_id()
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  result UUID;
+BEGIN
+  SELECT auth_user_id INTO result FROM admins LIMIT 1;
+  RETURN result;
+END;
+$$;
+
 -- ============================================================
 -- 13. SEED DATA — BANGLADESH LOCATIONS
 -- ============================================================

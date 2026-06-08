@@ -21,9 +21,9 @@ export default function AdminLayout({ children }) {
     async function loadAdmin() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/admin/login'); return }
-      const { data } = await supabase.from('admins').select('*').eq('auth_user_id', user.id).single()
-      if (!data) { router.push('/admin/login'); return }
-      setAdmin(data)
+      const { data: isAdmin } = await supabase.rpc('is_admin')
+      if (!isAdmin) { router.push('/admin/login'); return }
+      setAdmin({ id: user.id })
       const { count } = await supabase.from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('receiver_id', user.id)

@@ -40,13 +40,9 @@ export default function LoginForm() {
       return
     }
 
-    const { data: admin } = await supabase
-      .from('admins')
-      .select('id')
-      .eq('email', email)
-      .single()
+    const { data: isAdmin } = await supabase.rpc('is_admin')
 
-    if (admin) {
+    if (isAdmin) {
       router.push('/admin')
     } else {
       router.push('/dashboard')
