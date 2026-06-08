@@ -17,6 +17,7 @@ export default function AdminUserDetailPage() {
   const [pendingAction, setPendingAction] = useState(null)
   const [reviewNotes, setReviewNotes] = useState('')
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     supabase.from('shareholders').select(`

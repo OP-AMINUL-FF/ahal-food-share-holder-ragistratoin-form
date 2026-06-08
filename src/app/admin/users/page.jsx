@@ -14,6 +14,7 @@ export default function AdminUsersPage() {
   const [rejecting, setRejecting] = useState(null)
   const [rejectNotes, setRejectNotes] = useState('')
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => { loadUsers() }, [])
 

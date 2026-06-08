@@ -8,6 +8,7 @@ import { Users, UserCheck, UserX, Clock, MessageSquare, ArrowRight } from 'lucid
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 })
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     async function loadStats() {

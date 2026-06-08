@@ -7,6 +7,7 @@ import { Users, MapPin, Briefcase, User } from 'lucide-react'
 export default function MembersPage() {
   const [members, setMembers] = useState([])
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     supabase.from('shareholders').select(`

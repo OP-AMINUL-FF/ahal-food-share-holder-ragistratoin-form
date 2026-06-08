@@ -8,6 +8,7 @@ import { User, Phone, Mail, Calendar, Briefcase, MapPin } from 'lucide-react'
 export default function DashboardHome() {
   const [profile, setProfile] = useState(null)
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {

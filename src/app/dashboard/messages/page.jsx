@@ -9,6 +9,7 @@ export default function UserMessagesPage() {
   const [userId, setUserId] = useState(null)
   const [adminId, setAdminId] = useState(null)
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     async function init() {

@@ -12,6 +12,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  if (!supabase) return null
 
   async function handleLogin(e) {
     e.preventDefault()

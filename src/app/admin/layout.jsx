@@ -13,6 +13,7 @@ export default function AdminLayout({ children }) {
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     if (pathname === '/admin/login') { setLoading(false); return }

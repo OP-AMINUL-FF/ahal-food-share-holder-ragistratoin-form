@@ -15,6 +15,7 @@ export default function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     if (searchParams.get('registered') === 'true') {

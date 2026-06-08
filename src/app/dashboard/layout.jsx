@@ -13,6 +13,7 @@ export default function DashboardLayout({ children }) {
   const [unreadCount, setUnreadCount] = useState(0)
   const router = useRouter()
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     let channel = null

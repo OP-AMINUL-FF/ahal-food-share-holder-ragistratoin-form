@@ -11,6 +11,7 @@ export default function AdminMessagesPage() {
   const [selectedUser, setSelectedUser] = useState(null)
   const [search, setSearch] = useState('')
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     async function init() {

@@ -10,6 +10,7 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
   const [file, setFile] = useState(null)
   const messagesEndRef = useRef(null)
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     loadMessages()

@@ -11,20 +11,7 @@ import { UtensilsCrossed, UserPlus, Loader2 } from 'lucide-react'
 export default function RegisterPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [businessTypes, setBusinessTypes] = useState([])
-  const [form, setForm] = useState({
-    name: '', father_name: '', mother_name: '',
-    date_of_birth: '', phone: '', email: '',
-    password: '', confirm_password: '',
-    division_id: '', district_id: '', upazila_id: '',
-    union_id: '', village_id: '', address_details: '',
-    business_type_id: ''
-  })
-  const [photoFile, setPhotoFile] = useState(null)
-  const [nidFrontFile, setNidFrontFile] = useState(null)
-  const [nidBackFile, setNidBackFile] = useState(null)
+  if (!supabase) return null
 
   useEffect(() => {
     supabase.from('business_types').select('*').eq('is_active', true).order('name_bn')

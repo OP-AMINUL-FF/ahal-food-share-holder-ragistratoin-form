@@ -10,6 +10,7 @@ export default function LocationDropdowns({ values, onChange }) {
   const [unions, setUnions] = useState([])
   const [villages, setVillages] = useState([])
   const supabase = createClient()
+  if (!supabase) return null
 
   useEffect(() => {
     supabase.from('divisions').select('*').order('name_bn').then(({ data }) => {
