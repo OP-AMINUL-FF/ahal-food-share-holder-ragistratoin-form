@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabaseClient'
+import { setRememberMe, applySessionPersistence } from '@/lib/auth'
 import { UtensilsCrossed, LogIn, CheckCircle } from 'lucide-react'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMeState] = useState(true)
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
@@ -39,6 +41,9 @@ export default function LoginForm() {
       setLoading(false)
       return
     }
+
+    setRememberMe(rememberMe)
+    applySessionPersistence(rememberMe)
 
     const { data: isAdmin } = await supabase.rpc('is_admin')
 
@@ -78,6 +83,12 @@ export default function LoginForm() {
             <input type="password" className="input-field" value={password}
               onChange={e => setPassword(e.target.value)} required placeholder="••••••••" />
           </div>
+          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+            <input type="checkbox" checked={rememberMe}
+              onChange={e => setRememberMeState(e.target.checked)}
+              className="accent-ahal-600 w-4 h-4" />
+            রিমেম্বার মি
+          </label>
           <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
             <LogIn className="w-4 h-4" />
             {loading ? 'সাইন ইন হচ্ছে...' : 'সাইন ইন'}

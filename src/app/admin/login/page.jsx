@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
+import { setRememberMe, applySessionPersistence } from '@/lib/auth'
 import { Shield, LogIn } from 'lucide-react'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMeState] = useState(true)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -24,6 +26,8 @@ export default function AdminLoginPage() {
       setLoading(false)
       return
     }
+    setRememberMe(rememberMe)
+    applySessionPersistence(rememberMe)
     router.push('/admin')
   }
 
@@ -49,6 +53,12 @@ export default function AdminLoginPage() {
               focus:ring-2 focus:ring-ahal-500 outline-none" value={password}
               onChange={e => setPassword(e.target.value)} required />
           </div>
+          <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+            <input type="checkbox" checked={rememberMe}
+              onChange={e => setRememberMeState(e.target.checked)}
+              className="accent-ahal-600 w-4 h-4" />
+            রিমেম্বার মি
+          </label>
           <button type="submit" disabled={loading}
             className="w-full bg-ahal-600 hover:bg-ahal-700 text-white font-medium py-2.5 px-5 rounded-lg
               transition-colors flex items-center justify-center gap-2">
