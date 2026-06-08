@@ -72,40 +72,21 @@ export default function AdminMessagesPage() {
     if (!adminUser) return
     const channel = supabase.channel('admin-msg-updates')
 
-    async function refreshConvos() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data: msgs } = await supabase
-        .from('messages')
-        .select('sender_id, receiver_id, content, message_type, created_at, is_read')
-        .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
-        .order('created_at', { ascending: false })
-
-      const unreadMap = {}
-      const lastMsgMap = {}
-      if (msgs) {
-        for (const m of msgs) {
-          const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id
-          if (!lastMsgMap[otherId]) lastMsgMap[otherId] = m
-          if (m.receiver_id === user.id && !m.is_read) {
-            unreadMap[otherId] = (unreadMap[otherId] || 0) + 1
-          }
-        }
-      }
-      setConversations(prev => prev.map(c => ({
-        ...c,
-        lastMessage: lastMsgMap[c.auth_user_id] || c.lastMessage,
-        unreadCount: unreadMap[c.auth_user_id] || 0
-      })))
-    }
-
     channel
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
-          if (payload.new.receiver_id === adminUser || payload.new.sender_id === adminUser) {
-            refreshConvos()
-          }
+          const m = payload.new
+          if (m.receiver_id !== adminUser && m.sender_id !== adminUser) return
+          const otherId = m.sender_id === adminUser ? m.receiver_id : m.sender_id
+          setConversations(prev => prev.map(c => {
+            if (c.auth_user_id !== otherId) return c
+            const updated = { ...c, lastMessage: m }
+            if (m.receiver_id === adminUser && !m.is_read) {
+              updated.unreadCount = (c.unreadCount || 0) + 1
+            }
+            return updated
+          }))
         }
       )
       .subscribe()

@@ -100,6 +100,7 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef(null)
+  const scrollContainerRef = useRef(null)
   const supabase = createClient()
   if (!supabase) return null
 
@@ -142,7 +143,11 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
   }, [userId, otherId])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = scrollContainerRef.current
+    if (!container) return
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight
+    })
   }, [messages])
 
   useEffect(() => {
@@ -306,7 +311,7 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
         <h3 className="font-semibold">{otherName || 'চ্যাট'}</h3>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.map(msg => (
           <div key={msg.id} className={`flex ${msg.sender_id === userId ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[70%] rounded-xl px-4 py-2 ${

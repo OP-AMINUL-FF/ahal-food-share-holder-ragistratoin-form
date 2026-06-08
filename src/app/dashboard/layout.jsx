@@ -38,14 +38,11 @@ export default function DashboardLayout({ children }) {
       setLoading(false)
       channel = supabase.channel('user-unread')
         .on('postgres_changes',
-          { event: '*', schema: 'public', table: 'messages',
-            filter: `receiver_id=eq.${user.id}` },
-          async () => {
-            const { count } = await supabase.from('messages')
-              .select('*', { count: 'exact', head: true })
-              .eq('receiver_id', user.id)
-              .eq('is_read', false)
-            setUnreadCount(count || 0)
+          { event: 'INSERT', schema: 'public', table: 'messages' },
+          (payload) => {
+            if (payload.new.receiver_id === user.id && !payload.new.is_read) {
+              setUnreadCount(prev => prev + 1)
+            }
           }
         )
         .subscribe()
