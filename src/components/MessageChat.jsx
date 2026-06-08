@@ -48,13 +48,19 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
     }
   }
 
-  async function sendMessage(type = 'text') {
-    if (!text.trim() && !file) return
+  function handleFileSelect(e, type) {
+    const f = e.target.files?.[0]
+    if (f) sendMessage(type, f)
+  }
+
+  async function sendMessage(type = 'text', fileOverride = null) {
+    if (!text.trim() && !fileOverride && !file) return
+    const fileToUpload = fileOverride || file
     let mediaUrl = null
-    if (file) {
-      const ext = file.name.split('.').pop()
+    if (fileToUpload) {
+      const ext = fileToUpload.name.split('.').pop()
       const path = `chat/${userId}/${Date.now()}.${ext}`
-      await supabase.storage.from('message-media').upload(path, file)
+      await supabase.storage.from('message-media').upload(path, fileToUpload)
       const { data: { publicUrl } } = supabase.storage.from('message-media').getPublicUrl(path)
       mediaUrl = publicUrl
     }
@@ -69,14 +75,6 @@ export default function MessageChat({ userId, userType, otherId, otherType, othe
     })
     setText('')
     setFile(null)
-  }
-
-  function handleFileSelect(e, type) {
-    const f = e.target.files?.[0]
-    if (f) {
-      setFile(f)
-      sendMessage(type)
-    }
   }
 
   return (

@@ -71,35 +71,44 @@ export default function AdminMessagesPage() {
   useEffect(() => {
     if (!adminUser) return
     const channel = supabase.channel('admin-msg-updates')
+
+    async function refreshConvos() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: msgs } = await supabase
+        .from('messages')
+        .select('sender_id, receiver_id, content, message_type, created_at, is_read')
+        .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
+        .order('created_at', { ascending: false })
+
+      const unreadMap = {}
+      const lastMsgMap = {}
+      if (msgs) {
+        for (const m of msgs) {
+          const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id
+          if (!lastMsgMap[otherId]) lastMsgMap[otherId] = m
+          if (m.receiver_id === user.id && !m.is_read) {
+            unreadMap[otherId] = (unreadMap[otherId] || 0) + 1
+          }
+        }
+      }
+      setConversations(prev => prev.map(c => ({
+        ...c,
+        lastMessage: lastMsgMap[c.auth_user_id] || c.lastMessage,
+        unreadCount: unreadMap[c.auth_user_id] || 0
+      })))
+    }
+
+    channel
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages',
           filter: `receiver_id=eq.${adminUser}` },
-        async () => {
-          const { data: { user } } = await supabase.auth.getUser()
-          if (!user) return
-          const { data: msgs } = await supabase
-            .from('messages')
-            .select('sender_id, receiver_id, content, message_type, created_at, is_read')
-            .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
-            .order('created_at', { ascending: false })
-
-          const unreadMap = {}
-          const lastMsgMap = {}
-          if (msgs) {
-            for (const m of msgs) {
-              const otherId = m.sender_id === user.id ? m.receiver_id : m.sender_id
-              if (!lastMsgMap[otherId]) lastMsgMap[otherId] = m
-              if (m.receiver_id === user.id && !m.is_read) {
-                unreadMap[otherId] = (unreadMap[otherId] || 0) + 1
-              }
-            }
-          }
-          setConversations(prev => prev.map(c => ({
-            ...c,
-            lastMessage: lastMsgMap[c.auth_user_id] || c.lastMessage,
-            unreadCount: unreadMap[c.auth_user_id] || 0
-          })))
-        }
+        refreshConvos
+      )
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages',
+          filter: `sender_id=eq.${adminUser}` },
+        refreshConvos
       )
       .subscribe()
     return () => { supabase.removeChannel(channel) }

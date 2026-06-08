@@ -149,6 +149,9 @@ CREATE INDEX idx_messages_receiver ON messages(receiver_id, receiver_type);
 CREATE INDEX idx_messages_created ON messages(created_at DESC);
 CREATE INDEX idx_messages_unread ON messages(is_read) WHERE is_read = false;
 
+-- Enable Realtime for messages table
+ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+
 -- 8. TRIGGER
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
