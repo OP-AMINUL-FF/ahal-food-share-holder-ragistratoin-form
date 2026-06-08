@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabaseClient'
-import { setRememberMe, applySessionPersistence } from '@/lib/auth'
+import { setRememberMe, getRememberMe, applySessionPersistence } from '@/lib/auth'
 import { UtensilsCrossed, LogIn, CheckCircle } from 'lucide-react'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [rememberMe, setRememberMeState] = useState(true)
+  const [rememberMe, setRememberMeState] = useState(() => getRememberMe())
   const [error, setError] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
@@ -44,6 +44,8 @@ export default function LoginForm() {
 
     setRememberMe(rememberMe)
     applySessionPersistence(rememberMe)
+
+    await supabase.auth.getUser()
 
     const { data: isAdmin } = await supabase.rpc('is_admin')
 

@@ -101,7 +101,11 @@ export default function RegisterPage() {
       })
       if (profileError) throw new Error(profileError.message)
 
-      router.push('/login?registered=true')
+      if (authData.session) {
+        router.push('/dashboard')
+      } else {
+        router.push('/login?registered=true')
+      }
     } catch (err) {
       setError(err.message)
       setLoading(false)
