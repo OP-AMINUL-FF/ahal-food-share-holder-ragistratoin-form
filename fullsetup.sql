@@ -4,6 +4,28 @@
 -- Run this entire script in Supabase SQL Editor
 -- ============================================================
 
+-- 0. DROP EXISTING (for re-runnability)
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS shareholders CASCADE;
+DROP TABLE IF EXISTS admins CASCADE;
+DROP TABLE IF EXISTS villages CASCADE;
+DROP TABLE IF EXISTS unions CASCADE;
+DROP TABLE IF EXISTS upazilas CASCADE;
+DROP TABLE IF EXISTS districts CASCADE;
+DROP TABLE IF EXISTS divisions CASCADE;
+DROP TABLE IF EXISTS business_types CASCADE;
+DROP TYPE IF EXISTS shareholder_status;
+DROP TYPE IF EXISTS message_type;
+DROP TYPE IF EXISTS sender_type;
+
+-- Clean up storage policies (recreate them later)
+DROP POLICY IF EXISTS "Public read shareholder-photos" ON storage.objects;
+DROP POLICY IF EXISTS "Auth upload shareholder-photos" ON storage.objects;
+DROP POLICY IF EXISTS "Public read shareholder-nid" ON storage.objects;
+DROP POLICY IF EXISTS "Auth upload shareholder-nid" ON storage.objects;
+DROP POLICY IF EXISTS "Public read message-media" ON storage.objects;
+DROP POLICY IF EXISTS "Auth upload message-media" ON storage.objects;
+
 -- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -939,47 +961,51 @@ INSERT INTO business_types (id, name_bn, name_en) VALUES
   ('d4000001-0001-4000-a000-000000000014', 'ফ্রিল্যান্সিং', 'Freelancing'),
   ('d4000001-0001-4000-a000-000000000015', 'অন্যান্য', 'Other');
 
--- 18. CREATE DEFAULT ADMIN
+-- 18. CREATE DEFAULT ADMIN (idempotent)
 -- Email: admin@gmail.com, Password: admin
 DO $$
 DECLARE
-  admin_id UUID := uuid_generate_v4();
+  existing_id UUID;
+  admin_id UUID;
 BEGIN
-  -- Insert into auth.users
-  INSERT INTO auth.users (
-    instance_id, id, aud, role, email, encrypted_password,
-    email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
-    created_at, updated_at, confirmation_sent_at
-  ) VALUES (
-    '00000000-0000-0000-0000-000000000000',
-    admin_id,
-    'authenticated',
-    'authenticated',
-    'admin@gmail.com',
-    crypt('admin', gen_salt('bf')),
-    NOW(),
-    '{"provider":"email","providers":["email"]}',
-    '{"name":"Admin"}',
-    NOW(),
-    NOW(),
-    NOW()
-  );
+  -- Check if admin already exists
+  SELECT id INTO existing_id FROM auth.users WHERE email = 'admin@gmail.com';
+  IF existing_id IS NULL THEN
+    admin_id := uuid_generate_v4();
 
-  -- Insert into auth.identities (required for Supabase Auth)
-  INSERT INTO auth.identities (
-    id, user_id, identity_data, provider, last_sign_in_at,
-    created_at, updated_at
-  ) VALUES (
-    admin_id,
-    admin_id,
-    jsonb_build_object('sub', admin_id::text, 'email', 'admin@gmail.com'),
-    'email',
-    NOW(),
-    NOW(),
-    NOW()
-  );
+    INSERT INTO auth.users (
+      instance_id, id, aud, role, email, encrypted_password,
+      email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+      created_at, updated_at, confirmation_sent_at
+    ) VALUES (
+      '00000000-0000-0000-0000-000000000000',
+      admin_id,
+      'authenticated',
+      'authenticated',
+      'admin@gmail.com',
+      crypt('admin', gen_salt('bf')),
+      NOW(),
+      '{"provider":"email","providers":["email"]}',
+      '{"name":"Admin"}',
+      NOW(),
+      NOW(),
+      NOW()
+    );
 
-  -- Insert into admins table
-  INSERT INTO admins (auth_user_id, name, email, phone, role)
-  VALUES (admin_id, 'Admin', 'admin@gmail.com', '01700000000', 'super_admin');
+    INSERT INTO auth.identities (
+      id, user_id, identity_data, provider, last_sign_in_at,
+      created_at, updated_at
+    ) VALUES (
+      admin_id,
+      admin_id,
+      jsonb_build_object('sub', admin_id::text, 'email', 'admin@gmail.com'),
+      'email',
+      NOW(),
+      NOW(),
+      NOW()
+    );
+
+    INSERT INTO admins (auth_user_id, name, email, phone, role)
+    VALUES (admin_id, 'Admin', 'admin@gmail.com', '01700000000', 'super_admin');
+  END IF;
 END $$;
